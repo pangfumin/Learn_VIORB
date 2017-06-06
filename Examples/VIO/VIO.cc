@@ -233,7 +233,7 @@ void LoadIMUData(const string &strIMUDataFilePath, std::vector<ORB_SLAM2::IMUDat
 	  Imu._a[j] = a_ele;
 	  
 	}
-	std::cout<< Imu._a.transpose()<<std::endl;
+	//std::cout<< Imu._a.transpose()<<std::endl;
 	vimuData.push_back(Imu);
 	
     }
