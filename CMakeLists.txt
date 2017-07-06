@@ -103,9 +103,15 @@ ${LAPACK_LIBRARIES}
 ## Build examples
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/VIO)
-add_executable(VIO
-Examples/VIO/VIO.cc)
-target_link_libraries(VIO ${PROJECT_NAME})
+add_executable(euroc_VIO
+Examples/VIO/euroc_VIO.cc)
+target_link_libraries(euroc_VIO ${PROJECT_NAME})
+
+add_executable(segway_VIO
+        Examples/VIO/segway_VIO.cc
+        Examples/DataSetUtils/segwayDatasetReader.hpp
+        Examples/DataSetUtils/segwayDatasetReader.cpp)
+target_link_libraries(segway_VIO ${PROJECT_NAME})
 
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 
