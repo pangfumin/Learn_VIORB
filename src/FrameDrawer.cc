@@ -29,14 +29,15 @@
 namespace ORB_SLAM2
 {
 
-FrameDrawer::FrameDrawer(Map* pMap):mpMap(pMap)
-{
-    mState=Tracking::SYSTEM_NOT_READY;
-    mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
 
-    mStartTime = -1;
-    mCurTime = -1;
-}
+    FrameDrawer::FrameDrawer(Map* pMap, bool bReuse):mpMap(pMap)
+    {
+        mState=Tracking::SYSTEM_NOT_READY;
+            if (bReuse)
+                mState=Tracking::LOST;
+
+        mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
+    }
 
 cv::Mat FrameDrawer::DrawFrame()
 {

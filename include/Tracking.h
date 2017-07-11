@@ -83,7 +83,7 @@ public:
 
 public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, ConfigParam* pParams);
+             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, ConfigParam* pParams,const bool bReuse);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
@@ -241,6 +241,7 @@ protected:
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
 
+    bool is_preloaded;
     list<MapPoint*> mlpTemporalPoints;
 };
 

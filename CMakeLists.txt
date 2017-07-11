@@ -34,6 +34,10 @@ find_package(OpenCV 2.4.3 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(Cholmod REQUIRED)
+find_package(Boost  	     # Minimum or EXACT version e.g. 1.36.0
+          REQUIRED             					# Fail with error if Boost is not found
+          COMPONENTS serialization 				# Boost libraries by their canonical name
+          )
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -42,6 +46,7 @@ ${PROJECT_SOURCE_DIR}/src
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${CHOLMOD_INCLUDE_DIR}
+${BOOST_INCLUDE_DIR}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -98,6 +103,7 @@ cholmod
 ${CHOLMOD_LIBRARIES}
 ${BLAS_LIBRARIES}
 ${LAPACK_LIBRARIES}
+${Boost_LIBRARIES}
 )
 
 ## Build examples

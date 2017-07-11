@@ -33,6 +33,13 @@
 #include "IMU/imudata.h"
 #include "IMU/NavState.h"
 #include "IMU/IMUPreintegrator.h"
+#include <boost/serialization/serialization.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/list.hpp>
+#include <boost/serialization/vector.hpp>
+
+#include <boost/serialization/split_member.hpp>
 
 namespace ORB_SLAM2
 {
@@ -41,6 +48,13 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
+
+
+struct id_map
+{
+    bool is_valid;
+    long unsigned int id;
+};
 
 class KeyFrame
 {
@@ -79,6 +93,14 @@ public:
     NavState mNavStateGBA;       //mTcwGBA
     NavState mNavStateBefGBA;    //mTcwBefGBA
 
+
+    void SetMap(Map* map);
+    void SetKeyFrameDatabase(KeyFrameDatabase* pKeyFrameDB);
+    void SetORBvocabulary(ORBVocabulary* pORBvocabulary);
+    void SetMapPoints(std::vector<MapPoint*> spMapPoints);
+    void SetSpanningTree(std::vector<KeyFrame*> vpKeyFrames);
+    void SetGridParams(std::vector<KeyFrame*> vpKeyFrames);
+
 protected:
 
     std::mutex mMutexPrevKF;
@@ -98,6 +120,7 @@ protected:
 
 public:
     KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
+    KeyFrame();
 
     // Pose functions
     void SetPose(const cv::Mat &Tcw);
@@ -242,6 +265,13 @@ public:
     const int mnMaxY;
     const cv::Mat mK;
 
+    std::map<long unsigned int, id_map> 	   mmMapPoints_nId;
+    std::map<long unsigned int, int> 	   mConnectedKeyFrameWeights_nId;
+    id_map mparent_KfId_map;
+    std::map<long unsigned int, id_map> 	   mmChildrens_nId;
+    std::map<long unsigned int, id_map> 	   mmLoopEdges_nId;
+    std::map<long unsigned int, id_map> 	mvpOrderedConnectedKeyFrames_nId;
+
 
     // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
@@ -281,6 +311,21 @@ protected:
     float mHalfBaseline; // Only for visualization
 
     Map* mpMap;
+
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        boost::serialization::split_member(ar, *this, version);
+    }
+
+    template<class Archive>
+    void save(Archive & ar, const unsigned int version) const;
+
+
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version);
+
 
     std::mutex mMutexPose;
     std::mutex mMutexConnections;
