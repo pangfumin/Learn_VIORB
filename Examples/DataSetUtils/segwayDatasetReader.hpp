@@ -7,6 +7,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <deque>
+#include <vector>
 namespace okvis{
     typedef std::deque<Eigen::Vector3d> LinearVelocityDeque;
 
