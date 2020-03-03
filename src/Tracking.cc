@@ -491,6 +491,54 @@ cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const std::vector<IMUData> 
     return mCurrentFrame.mTcw.clone();
 }
 
+
+cv::Mat Tracking::GrabImageStereoVI(const cv::Mat &imRectLeft,const cv::Mat &imRectRight,
+        const std::vector<IMUData> &vimu, const double &timestamp)
+{
+    mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(),vimu.end());
+    mImGray = imRectLeft;
+    cv::Mat imGrayRight = imRectRight;
+
+    if(mImGray.channels()==3)
+    {
+        if(mbRGB)
+        {
+            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_RGB2GRAY);
+        }
+        else
+        {
+            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_BGR2GRAY);
+        }
+    }
+    else if(mImGray.channels()==4)
+    {
+        if(mbRGB)
+        {
+            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_RGBA2GRAY);
+        }
+        else
+        {
+            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
+        }
+    }
+
+//    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+        mCurrentFrame = Frame(mImGray,imGrayRight,vimu, timestamp,mpORBextractorLeft,mpORBextractorRight,
+                mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+//    else
+//        mCurrentFrame = Frame(mImGray,imGrayRight,vimu, timestamp,mpORBextractorLeft,mpORBextractorRight,
+//                              mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+
+
+    Track();
+
+    return mCurrentFrame.mTcw.clone();
+}
+
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
@@ -844,6 +892,7 @@ void Tracking::Track()
                     if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                     {
                         bOK = TrackReferenceKeyFrame();
+                        std::cout << "bOK 1 TrackReferenceKeyFrame: " << bOK << std::endl;
                     }
                     else
                     {
@@ -875,8 +924,11 @@ void Tracking::Track()
 #ifndef TRACK_WITH_IMU
                 bOK = TrackLocalMap();
 #else
-                if(!mpLocalMapper->GetVINSInited())
+                if(!mpLocalMapper->GetVINSInited()) {
                     bOK = TrackLocalMap();
+                    std::cout << "bOK 2 TrackLocalMap: " << bOK << std::endl;
+                }
+
                 else
                 {
                     if(mbRelocBiasPrepare)
@@ -1054,7 +1106,9 @@ void Tracking::StereoInitialization()
         mCurrentFrame.SetPose(cv::Mat::eye(4,4,CV_32F));
 
         // Create KeyFrame
-        KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+        KeyFrame* pKFini = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB, mvIMUSinceLastKF, NULL);
+        pKFini->ComputePreInt();
+        mvIMUSinceLastKF.clear();
 
         // Insert KeyFrame in the map
         mpMap->AddKeyFrame(pKFini);
@@ -1327,6 +1381,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
 
+    std::cout << "nmatches: " << nmatches <<  std::endl;
     if(nmatches<15)
         return false;
 
@@ -1355,6 +1410,8 @@ bool Tracking::TrackReferenceKeyFrame()
                 nmatchesMap++;
         }
     }
+
+    std::cout << "nmatchesMap : " << nmatchesMap <<  std::endl;
 
     return nmatchesMap>=10;
 }

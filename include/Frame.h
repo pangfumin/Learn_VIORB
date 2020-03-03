@@ -52,6 +52,9 @@ public:
     // Constructor for Monocular VI
     Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor* extractor,ORBVocabulary* voc,
           cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const std::vector<IMUData> &vimu,
+                 const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight,
+                 ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
 
     void ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator& imupreint) const;
     void UpdatePoseFromNS(const cv::Mat &Tbc);

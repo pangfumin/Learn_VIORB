@@ -200,7 +200,70 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<I
     AssignFeaturesToGrid();
 }
 
+    Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const std::vector<IMUData> &vimu,
+            const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight,
+            ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
+            :mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight),
+            mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
+             mpReferenceKF(static_cast<KeyFrame*>(NULL))
+    {
+        // Copy IMU data
+        mvIMUDataSinceLastFrame = vimu;
 
+        // Frame ID
+        mnId=nNextId++;
+
+        // Scale Level Info
+        mnScaleLevels = mpORBextractorLeft->GetLevels();
+        mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+        mfLogScaleFactor = log(mfScaleFactor);
+        mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+        mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+        mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+        mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+
+        // ORB extraction
+        thread threadLeft(&Frame::ExtractORB,this,0,imLeft);
+        thread threadRight(&Frame::ExtractORB,this,1,imRight);
+        threadLeft.join();
+        threadRight.join();
+
+        N = mvKeys.size();
+
+        std::cout << "N: " << N << std::endl;
+        if(mvKeys.empty())
+            return;
+
+        UndistortKeyPoints();
+
+        ComputeStereoMatches();
+
+        mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+        mvbOutlier = vector<bool>(N,false);
+
+
+        // This is done only for the first Frame (or after a change in the calibration)
+        if(mbInitialComputations)
+        {
+            ComputeImageBounds(imLeft);
+
+            mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
+            mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
+
+            fx = K.at<float>(0,0);
+            fy = K.at<float>(1,1);
+            cx = K.at<float>(0,2);
+            cy = K.at<float>(1,2);
+            invfx = 1.0f/fx;
+            invfy = 1.0f/fy;
+
+            mbInitialComputations=false;
+        }
+
+        mb = mbf/fx;
+
+        AssignFeaturesToGrid();
+    }
 
 
 //-------------------------------------------------------------------------------------------

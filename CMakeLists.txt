@@ -113,6 +113,10 @@ add_executable(euroc_VIO
 Examples/VIO/euroc_VIO.cc)
 target_link_libraries(euroc_VIO ${PROJECT_NAME})
 
+add_executable(euroc_VIO_stereo
+        Examples/VIO/euroc_VIO_stereo.cc)
+target_link_libraries(euroc_VIO_stereo ${PROJECT_NAME})
+
 add_executable(segway_VIO
         Examples/VIO/segway_VIO.cc
         Examples/DataSetUtils/segwayDatasetReader.hpp
