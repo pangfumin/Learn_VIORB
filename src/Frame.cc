@@ -230,7 +230,6 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<I
 
         N = mvKeys.size();
 
-        std::cout << "N: " << N << std::endl;
         if(mvKeys.empty())
             return;
 

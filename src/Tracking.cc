@@ -526,13 +526,8 @@ cv::Mat Tracking::GrabImageStereoVI(const cv::Mat &imRectLeft,const cv::Mat &imR
         }
     }
 
-//    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(mImGray,imGrayRight,vimu, timestamp,mpORBextractorLeft,mpORBextractorRight,
-                mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-//    else
-//        mCurrentFrame = Frame(mImGray,imGrayRight,vimu, timestamp,mpORBextractorLeft,mpORBextractorRight,
-//                              mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-
+    mCurrentFrame = Frame(mImGray,imGrayRight,vimu, timestamp,mpORBextractorLeft,mpORBextractorRight,
+            mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
 
     Track();
 
@@ -892,7 +887,6 @@ void Tracking::Track()
                     if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                     {
                         bOK = TrackReferenceKeyFrame();
-                        std::cout << "bOK 1 TrackReferenceKeyFrame: " << bOK << std::endl;
                     }
                     else
                     {
@@ -926,7 +920,6 @@ void Tracking::Track()
 #else
                 if(!mpLocalMapper->GetVINSInited()) {
                     bOK = TrackLocalMap();
-                    std::cout << "bOK 2 TrackLocalMap: " << bOK << std::endl;
                 }
 
                 else
@@ -1381,7 +1374,6 @@ bool Tracking::TrackReferenceKeyFrame()
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
 
-    std::cout << "nmatches: " << nmatches <<  std::endl;
     if(nmatches<15)
         return false;
 
@@ -1410,8 +1402,6 @@ bool Tracking::TrackReferenceKeyFrame()
                 nmatchesMap++;
         }
     }
-
-    std::cout << "nmatchesMap : " << nmatchesMap <<  std::endl;
 
     return nmatchesMap>=10;
 }
