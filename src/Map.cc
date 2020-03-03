@@ -132,7 +132,7 @@ bool KFIdComapre::operator ()(const KeyFrame* kfleft,const KeyFrame* kfright) co
             const unsigned int);
 
 
-    void Map::UpdateScale(const double &scale)
+void Map::UpdateScale(const double &scale)
 {
     unique_lock<mutex> lock(mMutexMapUpdate);
     for(std::set<KeyFrame*,KFIdComapre>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++)

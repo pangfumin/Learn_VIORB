@@ -38,7 +38,7 @@
 #include<mutex>
 
 
-#define TRACK_WITH_IMU
+//#define TRACK_WITH_IMU
 
 using namespace std;
 
@@ -292,6 +292,7 @@ void Tracking::PredictNavStateByIMU(bool bMapUpdated)
     if(!mpLocalMapper->GetVINSInited()) cerr<<"mpLocalMapper->GetVINSInited() not, shouldn't in PredictNavStateByIMU"<<endl;
 
     // Map updated, optimize with last KeyFrame
+    // Check whether map changed
     if(mpLocalMapper->GetFirstVINSInited() || bMapUpdated)
     {
         if(mpLocalMapper->GetFirstVINSInited() && !bMapUpdated) cerr<<"2-FirstVinsInit, but not bMapUpdated. shouldn't"<<endl;
@@ -875,8 +876,12 @@ void Tracking::Track()
                     else
                     {
                         bOK = TrackWithIMU(bMapUpdated);
-                        if(!bOK)
+                        std::cout << "TrackWithIMU 1: " << bOK << std::endl;
+                        if(!bOK) {
                             bOK = TrackReferenceKeyFrame();
+                            std::cout << "TrackReferenceKeyFrame 1: " << bOK << std::endl;
+                        }
+
 
                     }
                 }
@@ -920,6 +925,7 @@ void Tracking::Track()
 #else
                 if(!mpLocalMapper->GetVINSInited()) {
                     bOK = TrackLocalMap();
+                    std::cout << "TrackLocalMap 1: " << bOK << std::endl;
                 }
 
                 else

@@ -51,6 +51,9 @@ public:
     bool GetVINSInited(void);
     void SetVINSInited(bool flag);
 
+    // For Monocular case, VINS initialization may cause map change,
+    // So the occur of intialization should be record.
+    // todo: Maybe a better function name  VINSInitializationOccured
     bool GetFirstVINSInited(void);
     void SetFirstVINSInited(bool flag);
 
