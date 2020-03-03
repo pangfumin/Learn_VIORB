@@ -372,7 +372,109 @@ void EdgeNavStatePVRPointXYZOnlyPose::linearizeOplus()
     _jacobianOplusXi = JNavState;
 }
 
-void EdgeNavStatePriorPVRBias::computeError()
+
+    Vector3d EdgeStereoNavStatePVRPointXYZ::cam_project(const Vector3d & trans_xyz, const float &bf) const{
+        const float invz = 1.0f/trans_xyz[2];
+        Vector3d res;
+        res[0] = trans_xyz[0]*invz*fx + cx;
+        res[1] = trans_xyz[1]*invz*fy + cy;
+        res[2] = res[0] - bf*invz;
+        return res;
+    }
+
+    EdgeStereoNavStatePVRPointXYZ::EdgeStereoNavStatePVRPointXYZ() :
+            BaseBinaryEdge<3, Vector3d, VertexSBAPointXYZ, VertexNavStatePVR>() {
+    }
+
+    bool EdgeStereoNavStatePVRPointXYZ::read(std::istream& is){
+        for (int i=0; i<=3; i++){
+            is >> _measurement[i];
+        }
+        for (int i=0; i<=2; i++)
+            for (int j=i; j<=2; j++) {
+                is >> information()(i,j);
+                if (i!=j)
+                    information()(j,i)=information()(i,j);
+            }
+        return true;
+    }
+
+    bool EdgeStereoNavStatePVRPointXYZ::write(std::ostream& os) const {
+
+        for (int i=0; i<=3; i++){
+            os << measurement()[i] << " ";
+        }
+
+        for (int i=0; i<=2; i++)
+            for (int j=i; j<=2; j++){
+                os << " " <<  information()(i,j);
+            }
+        return os.good();
+    }
+
+    void EdgeStereoNavStatePVRPointXYZ::linearizeOplus() {
+
+    // todo
+        const VertexSBAPointXYZ* vPoint = static_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+        const VertexNavStatePVR* vNavState = static_cast<const VertexNavStatePVR*>(_vertices[1]);
+
+        const NavState& ns = vNavState->estimate();
+        Matrix3d Rwb = ns.Get_RotMatrix();
+        Vector3d Pwb = ns.Get_P();
+        const Vector3d& Pw = vPoint->estimate();
+
+        Matrix3d Rcb = Rbc.transpose();
+        Vector3d Pc = Rcb * Rwb.transpose() * (Pw - Pwb) - Rcb * Pbc;
+
+        double x = Pc[0];
+        double y = Pc[1];
+        double z = Pc[2];
+
+        // Jacobian of camera projection, H
+        Matrix3d H;
+        H.setZero();
+        H(0,0) = fx;
+        H(0,1) = 0;
+        H(0,2) = -x/z*fx;
+        H(1,0) = 0;
+        H(1,1) = fy;
+        H(1,2) = -y/z*fy;
+        H.row(2) = H.row(0);
+        Matrix<double,3,3> Jpi = H/z;
+
+        // error = obs - pi( Pc )
+        // Pw <- Pw + dPw,          for Point3D
+        // Rwb <- Rwb*exp(dtheta),  for NavState.R
+        // Pwb <- Pwb + Rwb*dPwb,   for NavState.P
+
+        // Jacobian of error w.r.t Pw
+        _jacobianOplusXi = - Jpi * Rcb * Rwb.transpose();
+
+        // Jacobian of Pc/error w.r.t dPwb
+        //Matrix3d J_Pc_dPwb = -Rcb;
+        Matrix<double,3,3> JdPwb = - Jpi * (-Rcb);
+        // Jacobian of Pc/error w.r.t dRwb
+        Vector3d Paux = Rcb*Rwb.transpose()*(Pw-Pwb);
+        //Matrix3d J_Pc_dRwb = Sophus::SO3::hat(Paux) * Rcb;
+        Matrix<double,3,3> JdRwb = - Jpi * (Sophus::SO3::hat(Paux) * Rcb);
+
+        // Jacobian of Pc w.r.t NavState
+        // order in 'update_': dP, dV, dPhi
+        Matrix<double,3,9> JNavState = Matrix<double,3,9>::Zero();
+        JNavState.block<3,3>(0,0) = JdPwb;
+        //JNavState.block<2,3>(0,3) = 0;
+        JNavState.block<3,3>(0,6) = JdRwb;
+        //JNavState.block<2,3>(0,9) = 0;
+        //JNavState.block<2,3>(0,12) = 0;
+
+        // Jacobian of error w.r.t NavState
+        _jacobianOplusXj = JNavState;
+    }
+
+
+
+
+    void EdgeNavStatePriorPVRBias::computeError()
 {
     const VertexNavStatePVR* vNSPVR = static_cast<const VertexNavStatePVR*>(_vertices[0]);
     const VertexNavStateBias* vNSBias = static_cast<const VertexNavStateBias*>(_vertices[1]);

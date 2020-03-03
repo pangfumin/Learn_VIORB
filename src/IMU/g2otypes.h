@@ -182,7 +182,76 @@ protected:
     Vector3d Pbc;
 };
 
-class EdgeNavStatePVRPointXYZOnlyPose : public BaseUnaryEdge<2, Vector2d, VertexNavStatePVR>
+
+
+
+    class  EdgeStereoNavStatePVRPointXYZ: public  BaseBinaryEdge<3, Vector3d, VertexSBAPointXYZ, VertexNavStatePVR>{
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        EdgeStereoNavStatePVRPointXYZ();
+
+        bool read(std::istream& is);
+
+        bool write(std::ostream& os) const;
+
+        void computeError()  {
+            Vector3d Cp = computePc();
+            Vector3d obs(_measurement);
+
+            _error = obs - cam_project(Cp,bf);
+        }
+
+        bool isDepthPositive() {
+            Vector3d Pc = computePc();
+            return Pc(2)>0.0;
+        }
+
+        Vector3d computePc() {
+            const VertexSBAPointXYZ* vPoint = static_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+            const VertexNavStatePVR* vNavState = static_cast<const VertexNavStatePVR*>(_vertices[1]);
+
+            const NavState& ns = vNavState->estimate();
+            Matrix3d Rwb = ns.Get_RotMatrix();
+            Vector3d Pwb = ns.Get_P();
+            const Vector3d& Pw = vPoint->estimate();
+
+            Matrix3d Rcb = Rbc.transpose();
+            Vector3d Pc = Rcb * Rwb.transpose() * (Pw - Pwb) - Rcb * Pbc;
+
+            return Pc;
+            //Vector3d Pwc = Rwb*Pbc + Pwb;
+            //Matrix3d Rcw = (Rwb*Rbc).transpose();
+            //Vector3d Pcw = -Rcw*Pwc;
+            //Vector3d Pc = Rcw*Pw + Pcw;
+        }
+
+
+        virtual void linearizeOplus();
+
+        Vector3d cam_project(const Vector3d & trans_xyz, const float &bf) const;
+
+        void SetParams(const double& fx_, const double& fy_, const double& cx_, const double& cy_,
+                       const double& bf_,
+                       const Matrix3d& Rbc_, const Vector3d& Pbc_) {
+            fx = fx_;
+            fy = fy_;
+            cx = cx_;
+            cy = cy_;
+            bf = bf_;
+            Rbc = Rbc_;
+            Pbc = Pbc_;
+        }
+
+        double fx, fy, cx, cy, bf;
+        // Camera-IMU extrinsics
+        Matrix3d Rbc;
+        Vector3d Pbc;
+    };
+
+
+
+    class EdgeNavStatePVRPointXYZOnlyPose : public BaseUnaryEdge<2, Vector2d, VertexNavStatePVR>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
